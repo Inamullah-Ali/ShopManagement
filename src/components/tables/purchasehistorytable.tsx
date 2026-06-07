@@ -25,7 +25,7 @@ const formatPurchaseDate = (value: string) => {
 
 export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History & { onPurchaseUpdate?: (purchase: PurchaseHistory) => void }) {
   return (
-    <Card className="min-w-full overflow-hidden p-0 w-full">
+    <Card className="min-w-full overflow-hidden p-0">
       <div className="flex items-center justify-between gap-2 px-3 pt-3">
         <p className="font-semibold">Recent Purchase</p>
       </div>
