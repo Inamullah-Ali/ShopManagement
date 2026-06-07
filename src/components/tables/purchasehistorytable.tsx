@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -12,6 +13,16 @@ import { RecentPurchaseEditDialogue } from "@/components/dialogue/recentpurchase
 import type { History } from "@/types/purchasehistory";
 import type { PurchaseHistory } from "@/types/purchasehistory";
 
+const formatPurchaseDate = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return format(date, "dd MMM yyyy");
+};
+
 export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History & { onPurchaseUpdate?: (purchase: PurchaseHistory) => void }) {
   return (
     <Card className="min-w-full overflow-hidden p-0">
@@ -20,17 +31,18 @@ export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History
       </div>
 
       <CardContent className="p-0">
-        <Table>
-          <TableHeader className="bg-muted">
-            <TableRow>
-              <TableCell>Supplier</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Total & Remaining</TableCell>
-              <TableCell>Payment Method</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell className="text-right">Action</TableCell>
-            </TableRow>
-          </TableHeader>
+        <div className="overflow-x-auto">
+          <Table className="min-w-180">
+            <TableHeader className="bg-muted">
+              <TableRow>
+                <TableCell>Supplier</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Total & Due</TableCell>
+                <TableCell>Pay Method</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell className="text-right">Action</TableCell>
+              </TableRow>
+            </TableHeader>
 
           <TableBody>
             {data.length === 0 ? (
@@ -46,7 +58,7 @@ export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History
                     {purchaseHistory.suppliername}
                   </TableCell>
 
-                  <TableCell>{purchaseHistory.date}</TableCell>
+                  <TableCell>{formatPurchaseDate(purchaseHistory.date)}</TableCell>
 
                   <TableCell>
                     <div className="flex flex-col">
@@ -76,6 +88,7 @@ export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -9,6 +10,16 @@ import {
 import { Card, CardContent } from "../ui/card";
 import { useProductStore } from "@/store/addproductstore";
 import type { SaleTableProps } from "@/types/sale";
+
+const formatSaleDateTime = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return format(date, "dd MMM yyyy, hh:mm a");
+};
 
 export default function SaleTable({ data }: SaleTableProps) {
   const products = useProductStore((state) => state.products)
@@ -79,7 +90,7 @@ export default function SaleTable({ data }: SaleTableProps) {
                     <TableCell>
                       <span className="font-bold">{sale.customerName || "Unknown Customer"}</span>
                     </TableCell>
-                    <TableCell>{sale.date}</TableCell>
+                    <TableCell>{formatSaleDateTime(sale.date)}</TableCell>
                     <TableCell>{sale.quantity}</TableCell>
                     <TableCell>
                       {sale.paymentMethod === "Credit" ? (

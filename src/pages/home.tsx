@@ -1,4 +1,6 @@
 import { useMemo, useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { format } from "date-fns"
 import { SectionCards } from "@/components/section-cards"
 import {
   Card,
@@ -15,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Package, ShoppingCart, User } from "lucide-react"
+import { Package, ShoppingCart, User, Users } from "lucide-react"
 import { AddSaleDialogue } from "@/components/dialogue/addsaleDialogue"
 import { useCustomerStore } from "@/store/customerstore"
 import { useExpenseStore } from "@/store/expensestore"
@@ -47,7 +49,16 @@ const readPurchasePageState = () => {
 
 const formatCurrency = (value: number) => `PKR ${value.toLocaleString()}`
 
+const formatDate = (value: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+  return format(date, "dd MMM yyyy")
+}
+
 export default function Home() {
+  const navigate = useNavigate()
   const currentUser = useAuthStore((state) => state.currentUser)
   const allProducts = useProductStore((state) => state.products)
   const loadProductsByShop = useProductStore((state) => state.loadProductsByShop)
@@ -291,6 +302,7 @@ export default function Home() {
       id: 1,
       title: "Add Product",
       icon: Package,
+      route: "/products",
       tileClassName: "bg-sky-100 text-sky-600",
       iconClassName: "bg-sky-200 text-sky-700",
     },
@@ -298,13 +310,15 @@ export default function Home() {
       id: 2,
       title: "Add Purchase",
       icon: ShoppingCart,
+      route: "/purchase",
       tileClassName: "bg-emerald-100 text-emerald-600",
       iconClassName: "bg-emerald-200 text-emerald-700",
     },
     {
       id: 3,
       title: "Add Customer",
-      icon: User,
+      icon: Users,
+      route: "/customers",
       tileClassName: "bg-amber-100 text-amber-600",
       iconClassName: "bg-amber-200 text-amber-700",
     },
@@ -312,22 +326,25 @@ export default function Home() {
       id: 4,
       title: "Add Supplier",
       icon: User,
+      route: "/suppliers",
       tileClassName: "bg-rose-100 text-rose-600",
       iconClassName: "bg-rose-200 text-rose-700",
-    },
-    {
-      id: 5,
-      title: "View Reports",
-      icon: Package,
-      tileClassName: "bg-violet-100 text-violet-600",
-      iconClassName: "bg-violet-200 text-violet-700",
     },
     {
       id: 6,
       title: "Add Expense",
       icon: ShoppingCart,
+      route: "/expenses",
       tileClassName: "bg-green-100 text-green-600",
       iconClassName: "bg-green-200 text-green-700",
+    },
+    {
+      id: 5,
+      title: "View Reports",
+      icon: Package,
+      route: "/reports",
+      tileClassName: "bg-violet-100 text-violet-600",
+      iconClassName: "bg-violet-200 text-violet-700",
     },
   ]
 
@@ -339,9 +356,9 @@ export default function Home() {
           <SectionCards />
 
           {/* Charts + Side Cards */}
-          <div className="grid grid-cols-1 gap-3 px-4 sm:px-6 xl:grid-cols-16">
+          <div className="grid grid-cols-1 gap-3 px-4 sm:px-6 xl:grid-cols-17">
             {/* Main Chart */}
-            <div className="xl:col-span-8">
+            <div className="xl:col-span-9">
               <ChartAreaGradient />
             </div>
 
@@ -355,7 +372,7 @@ export default function Home() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden">
-                  <div className="flex max-h-full flex-col gap-2 pr-2 overflow-y-auto border-b border-gray-300 pb-2">
+                  <div className="flex max-h-full flex-col gap-2 pr-2 overflow-y-auto">
                     {lowStockProducts.length > 0 ? (
                       lowStockProducts.map((product) => (
                         <div
@@ -449,8 +466,8 @@ export default function Home() {
           </div>
 
           {/* Bottom Section */}
-          <div className="grid grid-cols-1 gap-3 px-4 sm:px-6 xl:grid-cols-16">
-            <Card className="h-full max-h-88 xl:col-span-8 xl:-mt-20">
+          <div className="grid grid-cols-1 gap-3 px-4 sm:px-6 xl:grid-cols-17">
+            <Card className="h-full max-h-88 xl:col-span-9 xl:-mt-24">
               <CardHeader>
                 <CardTitle className="font-bold">Recent Sales</CardTitle>
               </CardHeader>
@@ -460,18 +477,23 @@ export default function Home() {
                     <TableRow>
                       <TableHead>Customer</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Products</TableHead>
+                      <TableHead className="w-30">Products</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className=" border-b border-gray-300 pb-2">
+                  <TableBody>
                     {recentSales.map((sale) => (
                       <TableRow key={sale.id}>
                         <TableCell>{sale.customerName || "Unknown"}</TableCell>
-                        <TableCell>{sale.date}</TableCell>
-                        <TableCell>{sale.productSummary}</TableCell>
+                        <TableCell>{formatDate(sale.date)}</TableCell>
+                        <TableCell
+                          className="max-w-30 truncate whitespace-nowrap"
+                          title={sale.productSummary}
+                        >
+                          {sale.productSummary}
+                        </TableCell>
                         <TableCell>{sale.quantity}</TableCell>
                         <TableCell>{formatCurrency(sale.totalPayment)}</TableCell>
                         <TableCell className="text-center align-middle">
@@ -491,13 +513,13 @@ export default function Home() {
                 </Table>
               </CardContent>
             </Card>
-            <div className="xl:col-span-4 xl:-mt-20">
+            <div className="xl:col-span-4 xl:-mt-24">
               <Card className="min-h-120">
                 <CardHeader>
                   <CardTitle className="font-bold">Recent Purchases</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden">
-                  <div className="flex max-h-120 flex-col gap-2 pr-2 overflow-y-auto border-b border-gray-300 pb-2">
+                  <div className="flex max-h-120 flex-col gap-2 pr-2 overflow-y-auto">
                     {recentPurchaseItems.length > 0 ? (
                       recentPurchaseItems.map((item) => (
                         <div
@@ -550,7 +572,7 @@ export default function Home() {
                   <CardTitle className="font-bold">Top Sell</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden">
-                  <div className="flex max-h-95 flex-col gap-2 pr-2 overflow-y-auto border-b border-gray-300 pb-2">
+                  <div className="flex max-h-95 flex-col gap-2 pr-2 overflow-y-auto">
                     {topSellProducts.length > 0 ? (
                       topSellProducts.map((product) => (
                         <div
@@ -598,7 +620,7 @@ export default function Home() {
               </Card>
             </div>
           </div>
-          <div className="p-0 sm:px-6  max-w-166.5  xl:-mt-35 mr-4">
+          <div className="p-0 sm:px-6  max-w-175.5  xl:-mt-35 mr-4">
             <Card className="w-full p-0">
                 <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-6">
                   {quickActions.map((item) => {
@@ -608,6 +630,15 @@ export default function Home() {
                       <div
                         key={item.id}
                         className={`flex min-h-20 flex-col items-center gap-2 rounded-md px-2 py-3 text-center cursor-pointer ${item.tileClassName}`}
+                        onClick={() => item.route && navigate(item.route)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault()
+                            item.route && navigate(item.route)
+                          }
+                        }}
                       >
                         <div className={`flex items-center justify-center rounded-md`}>
                           <Icon size={24} color="currentColor" />

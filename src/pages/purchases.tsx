@@ -435,7 +435,7 @@ export default function Purchases() {
   };
 
   return (
-    <div className="grid w-full min-w-0 grid-cols-1 overflow-x-hidden px-3 py-4 sm:px-4 lg:px-6 xl:grid-cols-4">
+    <div className="grid w-full min-w-0 grid-cols-1 overflow-x-hidden py-4 sm:px-4 lg:px-6 xl:grid-cols-4">
       <div className="order-2 hidden min-w-0 xl:order-1 xl:col-span-1 xl:block">
         <Card className="flex-1">
           <CardHeader>
@@ -548,8 +548,8 @@ export default function Purchases() {
         <div className="min-w-0">
           <CardHeader className="min-w-0 gap-2 overflow-hidden">
             <CardTitle>Purchase Summary</CardTitle>
-            <div className="flex gap-3 flex-row items-center justify-between ">
-              <div className="relative w-full min-w-0 lg:max-w-lg">
+            <div className="flex flex-row gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="relative w-full min-w-0 md:max-w-lg">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                   <Search size={16} />
                 </span>
@@ -577,14 +577,14 @@ export default function Purchases() {
                 <AddProductDialogue />
               </div>
             </div>
-            <div className="w-full">
+            <div className="w-full h-full overflow-x-auto">
               <PurchaseProductTable
                 data={filteredPurchaseProducts}
                 onUpdateItem={updatePurchaseItem}
                 onDeleteItem={deletePurchaseItem}
               />
             </div>
-            <div className="grid min-w-0 grid-cols-1 gap-2 2xl:grid-cols-4">
+            <div className="grid min-w-0 grid-cols-1 gap-2 xl:grid-cols-4">
               <div className="min-w-0 2xl:col-span-3">
                 <PurchaseHistoryTable data={recentPurchases} onPurchaseUpdate={handlePurchaseUpdate} />
               </div>

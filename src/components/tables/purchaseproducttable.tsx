@@ -4,6 +4,8 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { DeleteProductDialogue } from "../dialogue/deleteproductdialogue";
+import { useProductStore } from "@/store/addproductstore";
 import { useRef } from "react";
 
 type PurchaseProductTableProps = {
@@ -17,6 +19,7 @@ type PurchaseProductTableProps = {
 };
 
 export default function PurchaseProductTable({ data, onUpdateItem, onDeleteItem }: PurchaseProductTableProps) {
+  const products = useProductStore((state) => state.products);
   const previousValuesRef = useRef<
     Record<string, string>
   >({});
@@ -46,9 +49,9 @@ export default function PurchaseProductTable({ data, onUpdateItem, onDeleteItem 
   };
 
   return (
-    <Card className="min-w-full overflow-hidden p-0">
-      <div className="h-62 bg-muted">
-        <Table className="h-full">
+    <Card className="min-w-full overflow-hidden p-0 h-full">
+      <div className="h-62 bg-muted overflow-x-auto">
+        <Table className="min-w-225 h-full">
           <TableHeader>
             <TableRow>
               <TableHead>Product Name</TableHead>
@@ -175,15 +178,42 @@ export default function PurchaseProductTable({ data, onUpdateItem, onDeleteItem 
                     <TableCell>PKR {rowTotal}</TableCell>
 
                     <TableCell className="text-center">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDeleteItem(purchaseProduct.id)}
-                        className="size-8 cursor-pointer text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
+                      {(() => {
+                        const product = products.find(
+                          (item) => String(item.id) === String(purchaseProduct.id),
+                        );
+
+                        if (!product) {
+                          return (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onDeleteItem(purchaseProduct.id)}
+                              className="size-8 cursor-pointer hover:text-destructive text-red-500"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          );
+                        }
+
+                        return (
+                          <DeleteProductDialogue
+                            product={product}
+                            onDeleteSuccess={() => onDeleteItem(purchaseProduct.id)}
+                            trigger={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 cursor-pointer hover:text-destructive text-red-500"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            }
+                          />
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 );

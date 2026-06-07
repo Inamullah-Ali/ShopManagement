@@ -18,11 +18,13 @@ import type { Product } from "@/types/products";
 type DeleteProductDialogueProps = {
   product: Product;
   trigger?: ReactNode;
+  onDeleteSuccess?: () => void;
 };
 
 export function DeleteProductDialogue({
   product,
   trigger,
+  onDeleteSuccess,
 }: DeleteProductDialogueProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,6 +36,7 @@ export function DeleteProductDialogue({
       await deleteProduct(product.id);
       toast.success("Product deleted successfully.");
       setOpen(false);
+      onDeleteSuccess?.();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to delete product";
       toast.error(message);

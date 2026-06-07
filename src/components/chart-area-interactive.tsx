@@ -194,7 +194,7 @@ export function ChartAreaGradient() {
   }, [filter])
 
   return (
-    <Card className="py-2 overflow-hidden">
+    <Card className=" overflow-hidden h-92">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Sales Overview</CardTitle>
