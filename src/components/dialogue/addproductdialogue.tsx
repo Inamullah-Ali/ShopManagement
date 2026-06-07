@@ -272,18 +272,13 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
                     {imageSource === "url" ? (
                       <Input placeholder="Image URL" {...register("image")} />
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex justify-end">
                         <Input
                           type="file"
                           accept="image/*"
                           ref={fileInputRef}
                           onChange={handleDeviceImageChange}
                           className="hidden"
-                        />
-                        <Input
-                          readOnly
-                          value={selectedImageName || "No image selected"}
-                          placeholder="No image selected"
                         />
                         <Button
                           type="button"

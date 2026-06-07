@@ -389,10 +389,10 @@ export default function CreditCustomerTable({ data, itemsPerPage = 10 }: CreditC
 
       <div className="mt-4 flex flex-row items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Showing {totalItems === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} credit customers
+          Showing {totalItems === 0 ? 0 : startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} customers
         </p>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-row items-center gap-2">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((prev) => prev - 1)}
@@ -401,7 +401,7 @@ export default function CreditCustomerTable({ data, itemsPerPage = 10 }: CreditC
             <ChevronLeft size={16} />
           </button>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-row items-center gap-2">
             {pageNumbers.map((page) => {
               if (page === "ellipsis") {
                 return (

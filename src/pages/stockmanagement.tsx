@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Funnel, Search } from "lucide-react";
+import { Download, Funnel, Plus, Search } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useProductStore } from "@/store/addproductstore";
 import { useAuthStore } from "@/store/authstore";
@@ -149,13 +149,17 @@ export default function StockManagement() {
           </div>
         </div>
         <div className="flex justify-start lg:justify-end sm:hidden">
-          <Button
-            variant="outline"
-            size="icon"
-            className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 hover:text-white"
-          >
-            <Download size={18} />
-          </Button>
+          <StockReportDialog
+            trigger={
+              <Button
+                variant="outline"
+                size="icon"
+                className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 hover:text-white"
+              >
+                <Download size={18} />
+              </Button>
+            }
+          />
         </div>
         <div className="hidden justify-start lg:justify-end sm:flex">
           <StockReportDialog

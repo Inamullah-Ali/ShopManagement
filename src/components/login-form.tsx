@@ -306,7 +306,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                         fullName: event.target.value,
                       }))
                     }
-                    placeholder="John Doe"
+                    placeholder="abcd"
                     required
                   />
                 </Field>

@@ -620,7 +620,7 @@ export default function Home() {
               </Card>
             </div>
           </div>
-          <div className="p-0 sm:px-6  max-w-175.5  xl:-mt-35 mr-4">
+          <div className="items-center justify-center sm:px-2  max-w-175.5  xl:-mt-35 px-4">
             <Card className="w-full p-0">
                 <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-6">
                   {quickActions.map((item) => {
