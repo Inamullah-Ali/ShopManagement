@@ -84,7 +84,7 @@ export default function Account() {
   });
 
   // UI State (status messages are shown via toasts)
-  const shopLogo = "/api/placeholder/100/100";
+  // const shopLogo = "/api/placeholder/100/100";
   const fallbackAvatar = personImage;
   const fallbackShopLogo = shopImage;
 

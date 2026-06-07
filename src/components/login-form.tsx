@@ -1,39 +1,36 @@
-import { useState } from "react"
-import type { ComponentProps, FormEvent } from "react"
-import { useNavigate } from "react-router-dom"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react";
+import type { ComponentProps, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { toast } from "sonner"
-import { useAuthStore } from "@/store/authstore"
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useAuthStore } from "@/store/authstore";
 
-export function LoginForm({
-  className,
-  ...props
-}: ComponentProps<"div">) {
-  const navigate = useNavigate()
-  const loginUser = useAuthStore((state) => state.loginUser)
-  const registerUser = useAuthStore((state) => state.registerUser)
-  const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle)
-  const [mode, setMode] = useState<"login" | "signup">("login")
-  const [error, setError] = useState<string>("")
-  const [showLoginPassword, setShowLoginPassword] = useState(false)
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function LoginForm({ className, ...props }: ComponentProps<"div">) {
+  const navigate = useNavigate();
+  const loginUser = useAuthStore((state) => state.loginUser);
+  const registerUser = useAuthStore((state) => state.registerUser);
+  const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [error, setError] = useState<string>("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginValues, setLoginValues] = useState({
     email: "",
     password: "",
-  })
+  });
   const [signUpValues, setSignUpValues] = useState({
     fullName: "",
     shopName: "",
@@ -41,63 +38,77 @@ export function LoginForm({
     phoneNumber: "",
     password: "",
     confirmPassword: "",
-  })
-
-  
+  });
 
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError("")
+    event.preventDefault();
+    setError("");
 
-    const email = loginValues.email.trim()
-    const password = loginValues.password.trim()
+    const email = loginValues.email.trim();
+    const password = loginValues.password.trim();
 
     if (!email || !password) {
-      const errorMessage = "Please enter your email and password."
-      setError(errorMessage)
-      toast.error(errorMessage)
-      return
+      const errorMessage = "Please enter your email and password.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const result = await loginUser(email, password)
+      const result = await loginUser(email, password);
 
       if (!result.success) {
-        const errorMessage = result.error ?? "Invalid login credentials. Please check your email and password."
-        setError(errorMessage)
-        toast.error(errorMessage)
-        return
+        const errorMessage =
+          result.error ??
+          "Invalid login credentials. Please check your email and password.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
       }
 
-      toast.success("Logged in successfully.")
-      navigate("/dashboard")
+      toast.success("Logged in successfully.");
+      navigate("/dashboard");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError("")
+    event.preventDefault();
+    setError("");
 
-    const { fullName, shopName, email, phoneNumber, password, confirmPassword } = signUpValues
+    const {
+      fullName,
+      shopName,
+      email,
+      phoneNumber,
+      password,
+      confirmPassword,
+    } = signUpValues;
 
-    if (!fullName.trim() || !shopName.trim() || !email.trim() || !phoneNumber.trim() || !password || !confirmPassword) {
-      const errorMessage = "Please complete all sign up fields."
-      setError(errorMessage)
-      toast.error(errorMessage)
-      return
+    if (
+      !fullName.trim() ||
+      !shopName.trim() ||
+      !email.trim() ||
+      !phoneNumber.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      const errorMessage = "Please complete all sign up fields.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return;
     }
 
     if (password !== confirmPassword) {
-      const errorMessage = "Passwords do not match."
-      setError(errorMessage)
-      toast.error(errorMessage)
-      return
+      const errorMessage = "Passwords do not match.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const result = await registerUser({
         fullName: fullName.trim(),
@@ -105,18 +116,20 @@ export function LoginForm({
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         password,
-      })
+      });
 
       if (!result.success) {
-        const errorMessage = result.error ?? "Unable to register user."
-        setError(errorMessage)
-        toast.error(errorMessage)
-        return
+        const errorMessage = result.error ?? "Unable to register user.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
       }
 
-      toast.success("Sign up successful. Please log in with your email and password.")
-      setMode("login")
-      setLoginValues({ email: email.trim(), password: "" })
+      toast.success(
+        "Sign up successful. Please log in with your email and password.",
+      );
+      setMode("login");
+      setLoginValues({ email: email.trim(), password: "" });
       setSignUpValues({
         fullName: "",
         shopName: "",
@@ -124,34 +137,37 @@ export function LoginForm({
         phoneNumber: "",
         password: "",
         confirmPassword: "",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
-    setError("")
-    setIsSubmitting(true)
+    setError("");
+    setIsSubmitting(true);
 
     try {
-      const result = await signInWithGoogle()
+      const result = await signInWithGoogle();
       if (!result.success) {
-        const errorMessage = result.error ?? "Google login failed."
-        setError(errorMessage)
-        toast.error(errorMessage)
-        return
+        const errorMessage = result.error ?? "Google login failed.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
       }
 
-      toast.success("Logged in successfully.")
-      navigate("/dashboard")
+      toast.success("Logged in successfully.");
+      navigate("/dashboard");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div className={cn("flex flex-col items-center gap-6", className)} {...props}>
+    <div
+      className={cn("flex flex-col items-center gap-6", className)}
+      {...props}
+    >
       <Card className="overflow-hidden w-96">
         <CardContent className="max-w-lg">
           {mode === "login" ? (
@@ -163,6 +179,9 @@ export function LoginForm({
                     Login to your account
                   </p>
                 </div>
+                {error && (
+                  <p className="text-sm text-red-500 text-center">{error}</p>
+                )}
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
@@ -217,7 +236,11 @@ export function LoginForm({
                   </div>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={isSubmitting} className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                  >
                     {isSubmitting ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -232,7 +255,13 @@ export function LoginForm({
                   Or continue with
                 </FieldSeparator>
                 <Field className="">
-                  <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isSubmitting} className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={isSubmitting}
+                    className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
@@ -243,12 +272,12 @@ export function LoginForm({
                   </Button>
                 </Field>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account?{' '}
+                  Don&apos;t have an account?{" "}
                   <button
                     type="button"
                     onClick={() => {
-                      setMode("signup")
-                      setError("")
+                      setMode("signup");
+                      setError("");
                     }}
                     className="font-medium text-primary underline-offset-2 hover:underline cursor-pointer"
                   >
@@ -358,7 +387,9 @@ export function LoginForm({
                   </div>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
+                  <FieldLabel htmlFor="confirmPassword">
+                    Confirm Password
+                  </FieldLabel>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -375,7 +406,9 @@ export function LoginForm({
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showConfirmPassword ? (
@@ -387,7 +420,11 @@ export function LoginForm({
                   </div>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={isSubmitting} className="disabled:cursor-not-allowed disabled:opacity-70">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="disabled:cursor-not-allowed disabled:opacity-70"
+                  >
                     {isSubmitting ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -399,12 +436,12 @@ export function LoginForm({
                   </Button>
                 </Field>
                 <FieldDescription className="text-center">
-                  Already have an account?{' '}
+                  Already have an account?{" "}
                   <button
                     type="button"
                     onClick={() => {
-                      setMode("login")
-                      setError("")
+                      setMode("login");
+                      setError("");
                     }}
                     className="font-medium text-primary underline-offset-2 hover:underline cursor-pointer"
                   >
@@ -421,5 +458,5 @@ export function LoginForm({
         and <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
-  )
+  );
 }

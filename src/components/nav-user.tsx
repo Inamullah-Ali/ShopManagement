@@ -30,7 +30,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { EllipsisVerticalIcon, CircleUserRoundIcon, BellIcon, SettingsIcon, SunMoonIcon } from "lucide-react"
+import { EllipsisVerticalIcon, CircleUserRoundIcon, BellIcon, SunMoonIcon } from "lucide-react"
 import { ThemeSwitch } from "./themeswitcher"
 import { LogoutDialogue } from "./dialogue/logoutdialogue"
 
