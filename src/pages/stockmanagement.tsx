@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Funnel, Plus, Search } from "lucide-react";
+import { Download, Funnel, Search } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useProductStore } from "@/store/addproductstore";
 import { useAuthStore } from "@/store/authstore";
