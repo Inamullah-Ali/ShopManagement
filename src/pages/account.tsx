@@ -1,4 +1,5 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { uploadFile } from "@/service/appwritestorage";
 import { Upload, Camera, LogIn, LockKeyhole, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuthStore } from "@/store/authstore";
+import personImage from "@/assets/images/person.jpg";
+import shopImage from "@/assets/images/shop.jpg";
+import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 
 export default function Account() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const changePassword = useAuthStore((state) => state.changePassword);
   const [showPassword, setShowPassword] = useState({
     current: false,
     new: false,
@@ -78,12 +83,10 @@ export default function Account() {
     dailySummary: true,
   });
 
-  // UI State
-  const [statusMessage, setStatusMessage] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  // UI State (status messages are shown via toasts)
   const shopLogo = "/api/placeholder/100/100";
+  const fallbackAvatar = personImage;
+  const fallbackShopLogo = shopImage;
 
   useEffect(() => {
     if (!currentUser) return;
@@ -122,8 +125,6 @@ export default function Account() {
   }
 
   const handleSaveChanges = async () => {
-    setStatusMessage(null);
-
     const result = await updateUser(currentUser.id, {
       fullName: profile.fullName.trim(),
       email: profile.email.trim(),
@@ -138,89 +139,76 @@ export default function Account() {
       businessAddress: business.address.trim(),
     });
 
-    setStatusMessage({
-      type: result.success ? "success" : "error",
-      message: result.success
-        ? "Changes saved successfully."
-        : (result.error ?? "Unable to save changes."),
-    });
+    if (result.success) {
+      toast.success("Profile Update successfully.")
+    } else {
+      toast.error(result.error ?? "Unable to save changes.")
+    }
   };
 
   const handlePasswordUpdate = async () => {
-    setStatusMessage(null);
-
     if (!password.current || !password.new || !password.confirm) {
-      setStatusMessage({
-        type: "error",
-        message: "Please fill all password fields.",
-      });
-      return;
-    }
-
-    if (password.current !== currentUser.password) {
-      setStatusMessage({
-        type: "error",
-        message: "Current password is incorrect.",
-      });
-      return;
+      toast.error("Please fill all password fields.")
+      return
     }
 
     if (password.new !== password.confirm) {
-      setStatusMessage({
-        type: "error",
-        message: "New passwords do not match.",
-      });
-      return;
+      toast.error("New passwords do not match.")
+      return
     }
 
     if (password.new.length < 6) {
-      setStatusMessage({
-        type: "error",
-        message: "Password must be at least 6 characters.",
-      });
-      return;
+      toast.error("Password must be at least 6 characters.")
+      return
     }
 
-    const result = await updateUser(currentUser.id, { password: password.new });
+    // Attempt to change password in Firebase Auth and the local store
+    const result = await changePassword(currentUser.id, password.current, password.new)
 
     if (result.success) {
-      setPassword({ current: "", new: "", confirm: "" });
+      setPassword({ current: "", new: "", confirm: "" })
+      toast.success("Password updated successfully.")
+    } else {
+      toast.error(result.error ?? "Unable to update password.")
     }
-
-    setStatusMessage({
-      type: result.success ? "success" : "error",
-      message: result.success
-        ? "Password updated successfully."
-        : (result.error ?? "Unable to update password."),
-    });
   };
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setProfile((prevProfile) => ({
-        ...prevProfile,
-        avatar: reader.result as string,
-      }));
-    };
-    reader.readAsDataURL(file);
+    (async () => {
+      try {
+        const result = await uploadFile(file);
+        setProfile((prevProfile) => ({
+          ...prevProfile,
+          avatar: result.url,
+        }));
+          toast.success("Profile photo uploaded.")
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to upload avatar";
+        toast.error(message)
+      }
+    })();
   };
 
   const handleShopLogoChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setBusiness((prevBusiness) => ({
-        ...prevBusiness,
-        shopLogo: reader.result as string,
-      }));
-    };
-    reader.readAsDataURL(file);
+    (async () => {
+      try {
+        const result = await uploadFile(file);
+        setBusiness((prevBusiness) => ({
+          ...prevBusiness,
+          shopLogo: result.url,
+        }));
+        toast.success("Shop logo uploaded.")
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to upload shop logo";
+        toast.error(message)
+      }
+    })();
   };
 
   const activityData =
@@ -249,23 +237,10 @@ export default function Account() {
               Manage your account information and security settings
             </p>
           </div>
-          <Button onClick={handleSaveChanges} size="lg">
+          <Button onClick={handleSaveChanges} size="lg" variant="outline" className="border-purple-500 border-2 text-xs text-purple-500 font-semibold hover:text-purple-700 hover:bg-purple-50 cursor-pointer">
             Save Changes
           </Button>
         </div>
-
-        {/* Status Message */}
-        {statusMessage && (
-          <div
-            className={`rounded-lg border p-3 text-sm ${
-              statusMessage.type === "success"
-                ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                : "border-destructive/30 bg-destructive/5 text-destructive"
-            }`}
-          >
-            {statusMessage.message}
-          </div>
-        )}
 
         {/* Top Section: Profile & Password */}
         <div className="grid gap-4 lg:grid-cols-5">
@@ -279,13 +254,13 @@ export default function Account() {
               {/* Avatar Section */}
               <div className="flex flex-col items-center space-y-4 lg:w-72">
                 <div className="relative">
-                  <div className="h-24 w-24 rounded-full border-3 border-muted">
+                  <div className="h-28 w-28 rounded-full border-3 border-muted">
                     <img
                       src={
                         profile.avatar ||
                         currentUser?.avatar ||
                         business.shopLogo ||
-                        shopLogo
+                        fallbackAvatar
                       }
                       alt={profile.fullName || currentUser?.fullName || "User"}
                       className="aspect-square size-full object-cover rounded-full"
@@ -415,6 +390,7 @@ export default function Account() {
                     }
                     placeholder="Enter current password"
                     className="pr-10"
+                    autoComplete="off"
                   />
 
                   <button
@@ -448,6 +424,7 @@ export default function Account() {
                     }
                     placeholder="Enter new password"
                     className="pr-10"
+                    autoComplete="new-password"
                   />
 
                   <button
@@ -481,6 +458,7 @@ export default function Account() {
                     }
                     placeholder="Confirm new password"
                     className="pr-10"
+                    autoComplete="new-password"
                   />
 
                   <button
@@ -622,7 +600,7 @@ export default function Account() {
               <div className="flex flex-col gap-4 lg:self-end ">
                 <p className="text-md font-semibold">Shop Logo</p>
                 <img
-                  src={business.shopLogo || shopLogo}
+                  src={business.shopLogo || fallbackShopLogo}
                   alt="Shop Logo"
                   className="h-24 w-24 rounded-lg border-2 border-muted object-cover"
                 />

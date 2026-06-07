@@ -7,10 +7,12 @@ import {
 } from "../ui/table";
 
 import { Card, CardContent } from "../ui/card";
+import { RecentPurchaseEditDialogue } from "@/components/dialogue/recentpurchaseedit";
 
 import type { History } from "@/types/purchasehistory";
+import type { PurchaseHistory } from "@/types/purchasehistory";
 
-export default function PurchaseHistoryTable({ data }: History) {
+export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History & { onPurchaseUpdate?: (purchase: PurchaseHistory) => void }) {
   return (
     <Card className="min-w-full overflow-hidden p-0">
       <div className="flex items-center justify-between gap-2 px-3 pt-3">
@@ -26,13 +28,14 @@ export default function PurchaseHistoryTable({ data }: History) {
               <TableCell>Total & Remaining</TableCell>
               <TableCell>Payment Method</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell className="text-right">Action</TableCell>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                   No recent purchases yet.
                 </TableCell>
               </TableRow>
@@ -60,6 +63,14 @@ export default function PurchaseHistoryTable({ data }: History) {
                   <TableCell>{purchaseHistory.paymentMethod}</TableCell>
 
                   <TableCell>{purchaseHistory.status}</TableCell>
+                  <TableCell className="text-right">
+                    {purchaseHistory.status === "Partial" ? (
+                      <RecentPurchaseEditDialogue 
+                        purchase={purchaseHistory}
+                        onUpdate={onPurchaseUpdate}
+                      />
+                    ) : null}
+                  </TableCell>
                 </TableRow>
               ))
             )}

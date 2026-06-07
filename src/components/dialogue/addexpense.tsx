@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuthStore } from "@/store/authstore";
@@ -65,6 +65,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
   const currentUser = useAuthStore((state) => state.currentUser);
 
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [expenseName, setExpenseName] = useState("");
 
@@ -89,51 +90,47 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!currentUser?.firebaseUid) {
-      toast.error("Unable to save expense: user not found.");
-      return;
-    }
-
-    const name = expenseName.trim();
-    const total = Number(totalAmount);
-    const paid = Number(paidAmount || 0);
-
-    if (!name) {
-      toast.error("Expense name is required.");
-      return;
-    }
-
-    if (!totalAmount || Number.isNaN(total) || total <= 0) {
-      toast.error("Total amount must be greater than zero.");
-      return;
-    }
-
-    if ((paymentMethod === "Cash" || paymentMethod === "Card") && (Number.isNaN(paid) || paid <= 0)) {
-      toast.error("Paid amount is required for Cash or Card payments.");
-      return;
-    }
-
-    if (!Number.isNaN(paid) && paid > total) {
-      toast.error("Paid amount cannot be greater than total amount.");
-      return;
-    }
-
-    const status = paid >= total ? "Complete" : "Pending";
-
-    const creditPayments =
-      paymentMethod === "Credit" && paid > 0
-        ? [
-            {
-              id: `${Date.now()}-${Math.random()}`,
-              amount: paid,
-              date: new Date(paymentDate).toISOString(),
-              note: "Initial credit payment",
-            },
-          ]
-        : undefined;
+    setIsSubmitting(true);
 
     try {
+      if (!currentUser?.firebaseUid) {
+        throw new Error("Unable to save expense: user not found.");
+      }
+
+      const name = expenseName.trim();
+      const total = Number(totalAmount);
+      const paid = Number(paidAmount || 0);
+
+      if (!name) {
+        throw new Error("Expense name is required.");
+      }
+
+      if (!totalAmount || Number.isNaN(total) || total <= 0) {
+        throw new Error("Total amount must be greater than zero.");
+      }
+
+      if ((paymentMethod === "Cash" || paymentMethod === "Card") && (Number.isNaN(paid) || paid <= 0)) {
+        throw new Error("Paid amount is required for Cash or Card payments.");
+      }
+
+      if (!Number.isNaN(paid) && paid > total) {
+        throw new Error("Paid amount cannot be greater than total amount.");
+      }
+
+      const status = paid >= total ? "Complete" : "Pending";
+
+      const creditPayments =
+        paymentMethod === "Credit" && paid > 0
+          ? [
+              {
+                id: `${Date.now()}-${Math.random()}`,
+                amount: paid,
+                date: new Date(paymentDate).toISOString(),
+                note: "Initial credit payment",
+              },
+            ]
+          : undefined;
+
       await addExpense(
         {
           expensename: name,
@@ -154,6 +151,8 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to save expense.";
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -187,6 +186,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
               placeholder="Expense Name"
               value={expenseName}
               onChange={(e) => setExpenseName(e.target.value)}
+              disabled={isSubmitting}
             />
 
             <datalist id="expense-list">
@@ -202,6 +202,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
             placeholder="Total Amount"
             value={totalAmount}
             onChange={(e) => setTotalAmount(e.target.value)}
+            disabled={isSubmitting}
           />
 
           <Input
@@ -210,6 +211,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
             placeholder="Paid Amount"
             value={paidAmount}
             onChange={(e) => setPaidAmount(e.target.value)}
+            disabled={isSubmitting}
           />
 
           {paymentMethod === "Credit" && (
@@ -217,6 +219,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
+              disabled={isSubmitting}
             />
           )}
 
@@ -225,6 +228,7 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
             onValueChange={(value) =>
               setPaymentMethod(value as "Cash" | "Card" | "Credit")
             }
+            disabled={isSubmitting}
           >
             <SelectTrigger>
               <SelectValue placeholder="Payment Method" />
@@ -244,15 +248,24 @@ export function AddExpenseDialogue({ trigger }: AddExpenseDialogueProps) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
 
             <Button
               type="submit"
-              className="bg-purple-500 text-white hover:bg-purple-600"
+              className="bg-purple-500 text-white hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isSubmitting}
             >
-              Add Expense
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Expense"
+              )}
             </Button>
           </DialogFooter>
         </form>

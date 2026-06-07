@@ -34,7 +34,7 @@ import type {
   SaleDraftItem,
   SalePaymentMethod,
 } from "@/types/sale";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   useMemo,
@@ -167,8 +167,6 @@ export function AddSaleDialogue({ trigger, onComplete }: AddSaleDialogueProps) {
 
   const amountPaid = paymentMethod === "Credit" ? Math.max(parsedAmountPaidNow, 0) : billTotal;
   const remainingBalance = Math.max(billTotal - amountPaid, 0);
-
-  const missingDueDate = paymentMethod === "Credit" && remainingBalance > 0 && dueDate.trim() === "";
 
   const displayDiscountOrRemaining = paymentMethod === "Credit" ? remainingBalance : totalDiscount;
   const displayTotalPayment = paymentMethod === "Credit" ? amountPaid : billTotal;
@@ -373,11 +371,6 @@ export function AddSaleDialogue({ trigger, onComplete }: AddSaleDialogueProps) {
         toast.error("Invalid paid amount");
         return;
       }
-    }
-
-    if (missingDueDate) {
-      toast.error("Please select a due date for credit sales with outstanding balance");
-      return;
     }
 
     let finalCustomerId = selectedCustomer?.id;
@@ -772,17 +765,23 @@ export function AddSaleDialogue({ trigger, onComplete }: AddSaleDialogueProps) {
                 <Button
                   type="button"
                   onClick={handleCompleteSale}
-                  className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 w-full h-10"
+                  className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 w-full h-10 disabled:cursor-not-allowed disabled:opacity-70"
                   disabled={
                     isSaving ||
                     selectedItems.length === 0 ||
                     hasValidationError ||
                     amountPaidInvalid ||
-                    missingNameForCredit ||
-                    missingDueDate
+                    missingNameForCredit
                   }
                 >
-                  {isSaving ? "Saving..." : "Complete Sale"}
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Complete Sale"
+                  )}
                 </Button>
               </div>
             </div>

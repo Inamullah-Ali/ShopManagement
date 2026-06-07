@@ -9,8 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { useProductStore } from "@/store/addproductstore";
 import type { Product } from "@/types/products";
 
@@ -24,15 +25,20 @@ export function DeleteProductDialogue({
   trigger,
 }: DeleteProductDialogueProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const deleteProduct = useProductStore((state) => state.deleteProduct);
 
   const onDelete = async () => {
+    setIsSubmitting(true);
     try {
       await deleteProduct(product.id);
+      toast.success("Product deleted successfully.");
       setOpen(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to delete product";
-      alert(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -58,16 +64,24 @@ export function DeleteProductDialogue({
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" className="cursor-pointer">
+            <Button variant="outline" disabled={isSubmitting} className="cursor-pointer">
               Cancel
             </Button>
           </DialogClose>
           <Button
             type="button"
             onClick={onDelete}
-            className="bg-red-500 hover:bg-red-600 cursor-pointer text-white"
+            disabled={isSubmitting}
+            className="bg-red-500 hover:bg-red-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Delete
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Deleting...
+              </span>
+            ) : (
+              "Delete"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

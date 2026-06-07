@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useExpenseStore } from "@/store/expensestore";
 
@@ -28,10 +29,21 @@ export function DeleteExpenseDialogue({
   );
 
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleDelete = () => {
-    deleteExpense(expenseId);
-    setOpen(false);
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+
+    try {
+      await Promise.resolve(deleteExpense(expenseId));
+      toast.success("Expense deleted successfully.");
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to delete expense.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,15 +72,24 @@ export function DeleteExpenseDialogue({
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
 
           <Button
             onClick={handleDelete}
-            className="bg-red-500 text-white hover:bg-red-600"
+            className="bg-red-500 text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
           >
-            Delete
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

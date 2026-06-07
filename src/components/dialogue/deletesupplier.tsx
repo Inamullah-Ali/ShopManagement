@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import type { Supplier } from "@/types/supplier";
 import { useSupplierStore } from "@/store/supplierstore";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useState } from "react";
 
 type DeleteSupplierDialogueProps = {
@@ -21,9 +22,21 @@ export function DeleteSupplierDialogue({ supplier }: DeleteSupplierDialogueProps
   const [open, setOpen] = useState(false);
   const deleteSupplier = useSupplierStore((state) => state.deleteSupplier);
 
-  const handleDelete = () => {
-    deleteSupplier(supplier.id);
-    setOpen(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+
+    try {
+      await deleteSupplier(supplier.id);
+      toast.success("Supplier deleted successfully.");
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to delete supplier.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,16 +59,24 @@ export function DeleteSupplierDialogue({ supplier }: DeleteSupplierDialogueProps
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" className="cursor-pointer" type="button">
+            <Button variant="outline" disabled={isSubmitting} className="cursor-pointer" type="button">
               Cancel
             </Button>
           </DialogClose>
           <Button
             type="button"
             onClick={handleDelete}
-            className="bg-red-500 hover:bg-red-600 cursor-pointer text-white"
+            disabled={isSubmitting}
+            className="bg-red-500 hover:bg-red-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Delete
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Deleting...
+              </span>
+            ) : (
+              "Delete"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

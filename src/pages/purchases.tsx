@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
+import { Loader2, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useProductStore } from "@/store/addproductstore";
 import { useSupplierStore } from "@/store/supplierstore";
@@ -184,6 +185,7 @@ export default function Purchases() {
     });
   }, [products]);
   const currentUser = useAuthStore((state) => state.currentUser)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<PurchaseHistory[]>(
     persistedState?.recentPurchases ?? defaultState.recentPurchases,
   );
@@ -265,6 +267,23 @@ export default function Purchases() {
   const dueAmount = Math.max(totalAmount - paidAmountNumber, 0);
   const purchaseStatus = dueAmount === 0 ? "Completed" : "Partial";
 
+  const hasPurchaseChanges = useMemo(() => {
+    const productMap = new Map(products.map((product) => [product.id, product]));
+
+    return purchaseProducts.some((item) => {
+      const originalProduct = productMap.get(item.id);
+      const originalPrice = originalProduct?.purchasePrice ?? item.purchasePrice;
+      const originalStockAvailable = originalProduct?.stock ?? item.stockAvailable;
+
+      return (
+        Number(item.quantity || 0) > 0 ||
+        Number(item.discount || 0) > 0 ||
+        Number(item.purchasePrice || 0) !== Number(originalPrice || 0) ||
+        Number(item.stockAvailable || 0) !== Number(originalStockAvailable || 0)
+      );
+    });
+  }, [purchaseProducts, products]);
+
   const updatePurchaseItem = (
     id: PurchaseProduct["id"],
     field: keyof Pick<PurchaseProduct, "purchasePrice" | "stockAvailable" | "quantity" | "discount">,
@@ -333,6 +352,10 @@ export default function Purchases() {
   };
 
   const handleCompletePurchase = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     try {
       await Promise.all(
         purchaseProducts.map((product) =>
@@ -368,7 +391,7 @@ export default function Purchases() {
       };
 
       if (!currentUser?.firebaseUid) {
-        throw new Error("Unable to save purchase: user is not authenticated.")
+        throw new Error("Unable to save purchase: user is not authenticated.");
       }
 
       await Promise.all(
@@ -384,7 +407,7 @@ export default function Purchases() {
       const { purchase: firestorePurchase } = await addPurchaseService(
         nextPurchase,
         currentUser.firebaseUid,
-      )
+      );
 
       setRecentPurchases((currentPurchases) => [firestorePurchase, ...currentPurchases]);
       setPurchaseProducts((currentProducts) =>
@@ -394,10 +417,21 @@ export default function Purchases() {
           total: 0,
         })),
       );
+      toast.success("Purchase completed successfully.");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to complete purchase";
-      alert(message);
+      const message = error instanceof Error ? error.message : "Failed to complete purchase.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handlePurchaseUpdate = (updatedPurchase: PurchaseHistory) => {
+    setRecentPurchases((currentPurchases) =>
+      currentPurchases.map((purchase) =>
+        purchase.id === updatedPurchase.id ? updatedPurchase : purchase,
+      ),
+    );
   };
 
   return (
@@ -552,7 +586,7 @@ export default function Purchases() {
             </div>
             <div className="grid min-w-0 grid-cols-1 gap-2 2xl:grid-cols-4">
               <div className="min-w-0 2xl:col-span-3">
-                <PurchaseHistoryTable data={recentPurchases} />
+                <PurchaseHistoryTable data={recentPurchases} onPurchaseUpdate={handlePurchaseUpdate} />
               </div>
               <div className="min-w-0 xl:hidden">
                 <Card className="w-full min-w-0">
@@ -711,10 +745,18 @@ export default function Purchases() {
                       </p>
                     </div>
                     <Button
-                      className="w-full cursor-pointer bg-purple-500 hover:bg-purple-600"
+                      className="w-full cursor-pointer bg-purple-500 hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-70"
                       onClick={handleCompletePurchase}
+                      disabled={isSubmitting || !hasPurchaseChanges}
                     >
-                      Complete Purchase
+                      {isSubmitting ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Completing...
+                        </span>
+                      ) : (
+                        "Complete Purchase"
+                      )}
                     </Button>
                   </CardHeader>
                 </Card>

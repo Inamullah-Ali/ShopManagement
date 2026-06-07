@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, PencilLine } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, PencilLine } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Checkbox } from "../ui/checkbox";
@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 // transaction history will be derived from sales store per-customer at render time
 
@@ -39,46 +40,63 @@ function EditCreditDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const recordCreditPayment = useSalesStore((s) => s.recordCreditPayment);
 
   useEffect(() => {
     setPaymentAmount(0);
   }, [customer.id]);
 
-  const handleSave = () => {
-    const totalBill = customer.totalBill ?? customer.totalCreditAmount;
-    const appliedPayment = Math.min(Math.max(paymentAmount, 0), customer.remainingBalance);
-    const nextPaidAmount = customer.amountPaid + appliedPayment;
-    const remaining = Math.max(totalBill - nextPaidAmount, 0);
-    const status = remaining === 0 ? "Paid" : nextPaidAmount > 0 ? "Partially Paid" : "Unpaid";
+  const handleSave = async () => {
+    setIsSubmitting(true);
 
-    const updated: CreditCustomer = {
-      ...customer,
-      totalCreditAmount: totalBill,
-      totalBill,
-      amountPaid: nextPaidAmount,
-      latestPaidAmount: appliedPayment,
-      remainingBalance: remaining,
-      lastTransactionDate: formatToday(),
-      status,
-    };
+    try {
+      const totalBill = customer.totalBill ?? customer.totalCreditAmount;
+      const appliedPayment = Math.min(Math.max(paymentAmount, 0), customer.remainingBalance);
+      const nextPaidAmount = customer.amountPaid + appliedPayment;
+      const remaining = Math.max(totalBill - nextPaidAmount, 0);
+      const status = remaining === 0 ? "Paid" : nextPaidAmount > 0 ? "Partially Paid" : "Unpaid";
 
-    onSave(updated);
-    if (appliedPayment > 0) {
-      try {
-        recordCreditPayment(
-          {
-            id: customer.id,
-            name: customer.name,
-            phoneNumber: customer.phoneNumber,
-          },
-          appliedPayment,
-        );
-      } catch {
-        // swallow errors to avoid breaking UI; history will appear on next successful save
+      const updated: CreditCustomer = {
+        ...customer,
+        totalCreditAmount: totalBill,
+        totalBill,
+        amountPaid: nextPaidAmount,
+        latestPaidAmount: appliedPayment,
+        remainingBalance: remaining,
+        lastTransactionDate: formatToday(),
+        status,
+      };
+
+      onSave(updated);
+      
+      if (appliedPayment > 0) {
+        try {
+          recordCreditPayment(
+            {
+              id: customer.id,
+              name: customer.name,
+              phoneNumber: customer.phoneNumber,
+            },
+            appliedPayment,
+          );
+        } catch {
+          // swallow errors to avoid breaking UI; history will appear on next successful save
+        }
       }
+
+      toast.success(
+        status === "Paid"
+          ? "Payment completed successfully."
+          : "Payment recorded successfully."
+      );
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to save payment";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -96,12 +114,12 @@ function EditCreditDialog({
         <div className="grid gap-3 py-2">
           <div>
             <p className="text-sm text-muted-foreground">Total Bill</p>
-            <Input value={customer.totalBill ?? customer.totalCreditAmount} readOnly />
+            <Input value={customer.totalBill ?? customer.totalCreditAmount} readOnly disabled={isSubmitting} />
           </div>
 
           <div>
             <p className="text-sm text-muted-foreground">Remaining</p>
-            <Input value={customer.remainingBalance} readOnly />
+            <Input value={customer.remainingBalance} readOnly disabled={isSubmitting} />
           </div>
 
           <div>
@@ -110,16 +128,28 @@ function EditCreditDialog({
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(Number(e.target.value || 0))}
               placeholder="Enter payment"
+              disabled={isSubmitting}
             />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button className="bg-purple-500 hover:bg-purple-600 text-white" onClick={handleSave}>
-            Save
+          <Button 
+            className="bg-purple-500 hover:bg-purple-600 text-white disabled:cursor-not-allowed disabled:opacity-70" 
+            onClick={handleSave}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save"
+            )}
           </Button>
         </div>
       </DialogContent>
@@ -336,15 +366,17 @@ export default function CreditCustomerTable({ data, itemsPerPage = 10 }: CreditC
                           </DrawerContent>
                         </Drawer>
 
-                        <EditCreditDialog
-                          customer={customer}
-                          onSave={(updated) => {
-                            setCustomersData((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-                            if (selectedCustomer?.id === updated.id) {
-                              setSelectedCustomer(updated);
-                            }
-                          }}
-                        />
+                        {customer.status !== "Paid" ? (
+                          <EditCreditDialog
+                            customer={customer}
+                            onSave={(updated) => {
+                              setCustomersData((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+                              if (selectedCustomer?.id === updated.id) {
+                                setSelectedCustomer(updated);
+                              }
+                            }}
+                          />
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>

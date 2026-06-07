@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/authstore";
 import { useSupplierStore } from "@/store/supplierstore";
 import type { SupplierFormValues } from "@/types/supplier";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,7 @@ const defaultValues: SupplierFormValues = {
 
 export function AddSupplierDialogue({ trigger }: AddSupplierDialogueProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const addSupplier = useSupplierStore((state) => state.addSupplier);
   const currentUser = useAuthStore((state) => state.currentUser);
   const {
@@ -49,19 +51,29 @@ export function AddSupplierDialogue({ trigger }: AddSupplierDialogueProps) {
 
   const onSubmit = async (data: SupplierFormValues) => {
     if (!currentUser?.firebaseUid) {
-      alert("Unable to save supplier: user not found.");
+      toast.error("Unable to save supplier: user not found.");
       return;
     }
 
-    await addSupplier(
-      {
-        ...data,
-        totalPurchase: "0",
-        totalDue: "0",
-      },
-      currentUser.firebaseUid,
-    );
-    closeAndReset();
+    setIsSubmitting(true);
+
+    try {
+      await addSupplier(
+        {
+          ...data,
+          totalPurchase: "0",
+          totalDue: "0",
+        },
+        currentUser.firebaseUid,
+      );
+      toast.success("Supplier added successfully.");
+      closeAndReset();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to add supplier.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -125,12 +137,23 @@ export function AddSupplierDialogue({ trigger }: AddSupplierDialogueProps) {
 
           <div className="flex items-center justify-end gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="cursor-pointer" type="button">
+              <Button variant="outline" disabled={isSubmitting} className="cursor-pointer" type="button">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white">
-              Add
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Adding...
+                </span>
+              ) : (
+                "Add"
+              )}
             </Button>
           </div>
         </form>

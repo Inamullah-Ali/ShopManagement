@@ -10,11 +10,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { useProductStore } from "@/store/addproductstore";
 import { useAuthStore } from "@/store/authstore";
+import { uploadFile } from "@/service/appwritestorage";
 import type { Product, ProductFormData } from "@/types/products";
 
 type AddProductDialogueProps = {
@@ -28,12 +30,15 @@ const defaultProductFormValues: ProductFormData = {
   sellPrice: "" as unknown as number,
   stock: "" as unknown as number,
   status: "Healthy",
+  shopId: ""
 };
 
 export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
   const [open, setOpen] = useState(false);
   const [imageSource, setImageSource] = useState<"url" | "device">("device");
   const [selectedImageName, setSelectedImageName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const addProduct = useProductStore((state) => state.addProduct);
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -54,6 +59,7 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
     reset(defaultProductFormValues);
     setImageSource("device");
     setSelectedImageName("");
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -77,21 +83,40 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
 
   const onSubmit = async (data: ProductFormData) => {
     if (!currentUser || !currentUser.firebaseUid) {
-      alert("You must be logged in to add a product");
+      toast.error("You must be logged in to add a product");
       return;
+    }
+
+    setIsSubmitting(true);
+    let imageUrl = data.image;
+
+    if (imageSource === "device" && selectedFile) {
+      try {
+        const uploadResult = await uploadFile(selectedFile);
+        imageUrl = uploadResult.url;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to upload product image";
+        toast.error(message);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const productData = {
       ...data,
+      image: imageUrl,
       status: getStatusFromStock(data.stock),
     };
 
     try {
       await addProduct(productData, currentUser.firebaseUid);
+      toast.success("Product added successfully.");
       closeAndResetForm();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to add product";
-      alert(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -110,6 +135,7 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
       return;
     }
 
+    setSelectedFile(file);
     setSelectedImageName(file.name);
 
     const reader = new FileReader();
@@ -128,6 +154,7 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
   const useUrlInput = () => {
     setImageSource("url");
     setSelectedImageName("");
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -137,6 +164,7 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
   const useDeviceInput = () => {
     setImageSource("device");
     setSelectedImageName("");
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -361,6 +389,7 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmitting}
                 className="cursor-pointer"
               >
                 Cancel
@@ -369,9 +398,17 @@ export function AddProductDialogue({ trigger }: AddProductDialogueProps) {
 
             <Button
               type="submit"
-              className="bg-purple-500 hover:bg-purple-600 text-white cursor-pointer"
+              disabled={isSubmitting}
+              className="bg-purple-500 hover:bg-purple-600 text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Add Product
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Adding...
+                </span>
+              ) : (
+                "Add Product"
+              )}
             </Button>
           </DialogFooter>
         </form>

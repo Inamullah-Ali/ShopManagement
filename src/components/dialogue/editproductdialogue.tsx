@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PencilLine } from "lucide-react";
+import { PencilLine, Loader2 } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -19,7 +19,9 @@ import {
   type ReactNode,
 } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { useProductStore } from "@/store/addproductstore";
+import { uploadFile } from "@/service/appwritestorage";
 import type { Product, ProductFormData } from "@/types/products";
 
 type EditProductDialogueProps = {
@@ -34,6 +36,8 @@ export function EditProductDialogue({
   const [open, setOpen] = useState(false);
   const [imageSource, setImageSource] = useState<"url" | "device">("device");
   const [selectedImageName, setSelectedImageName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const updateProduct = useProductStore((state) => state.updateProduct);
 
@@ -44,6 +48,7 @@ export function EditProductDialogue({
     sellPrice: product.sellPrice,
     stock: product.stock,
     status: product.status === "InStock" ? "Healthy" : product.status,
+    shopId: product.shopId,
   });
 
   const {
@@ -74,13 +79,34 @@ export function EditProductDialogue({
   }, [open, product]);
 
   const onSubmit = async (data: ProductFormData) => {
+    setIsSubmitting(true);
+    let imageUrl = data.image;
+
+    if (imageSource === "device" && selectedFile) {
+      try {
+        const uploadResult = await uploadFile(selectedFile);
+        imageUrl = uploadResult.url;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to upload product image";
+        toast.error(message);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     try {
-      await updateProduct(product.id, data);
+      await updateProduct(product.id, {
+        ...data,
+        image: imageUrl,
+      });
+      toast.success("Product updated successfully.");
       clearFormState();
       setOpen(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to update product";
-      alert(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,6 +125,7 @@ export function EditProductDialogue({
       return;
     }
 
+    setSelectedFile(file);
     setSelectedImageName(file.name);
 
     const reader = new FileReader();
@@ -117,6 +144,7 @@ export function EditProductDialogue({
   const useUrlInput = () => {
     setImageSource("url");
     setSelectedImageName("");
+    setSelectedFile(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -128,6 +156,7 @@ export function EditProductDialogue({
   const useDeviceInput = () => {
     setImageSource("device");
     setSelectedImageName("");
+    setSelectedFile(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -351,6 +380,7 @@ export function EditProductDialogue({
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmitting}
                 className="cursor-pointer"
               >
                 Cancel
@@ -358,9 +388,17 @@ export function EditProductDialogue({
             </DialogClose>
             <Button
               type="submit"
-              className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white"
+              disabled={isSubmitting}
+              className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Update
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                "Update"
+              )}
             </Button>
           </DialogFooter>
         </form>

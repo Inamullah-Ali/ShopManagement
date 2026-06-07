@@ -12,7 +12,8 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { useAuthStore } from "@/store/authstore"
 
 export function LoginForm({
@@ -24,11 +25,11 @@ export function LoginForm({
   const registerUser = useAuthStore((state) => state.registerUser)
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle)
   const [mode, setMode] = useState<"login" | "signup">("login")
-  const [message, setMessage] = useState<string>("")
   const [error, setError] = useState<string>("")
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showSignUpPassword, setShowSignUpPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [loginValues, setLoginValues] = useState({
     email: "",
     password: "",
@@ -47,80 +48,106 @@ export function LoginForm({
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError("")
-    setMessage("")
 
     const email = loginValues.email.trim()
     const password = loginValues.password.trim()
 
     if (!email || !password) {
-      setError("Please enter your email and password.")
+      const errorMessage = "Please enter your email and password."
+      setError(errorMessage)
+      toast.error(errorMessage)
       return
     }
 
-    const result = await loginUser(email, password)
+    setIsSubmitting(true)
+    try {
+      const result = await loginUser(email, password)
 
-    if (!result.success) {
-      setError(result.error ?? "Invalid login credentials. Please check your email and password.")
-      return
+      if (!result.success) {
+        const errorMessage = result.error ?? "Invalid login credentials. Please check your email and password."
+        setError(errorMessage)
+        toast.error(errorMessage)
+        return
+      }
+
+      toast.success("Logged in successfully.")
+      navigate("/dashboard")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    navigate("/dashboard")
   }
 
   const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError("")
-    setMessage("")
 
     const { fullName, shopName, email, phoneNumber, password, confirmPassword } = signUpValues
 
     if (!fullName.trim() || !shopName.trim() || !email.trim() || !phoneNumber.trim() || !password || !confirmPassword) {
-      setError("Please complete all sign up fields.")
+      const errorMessage = "Please complete all sign up fields."
+      setError(errorMessage)
+      toast.error(errorMessage)
       return
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.")
+      const errorMessage = "Passwords do not match."
+      setError(errorMessage)
+      toast.error(errorMessage)
       return
     }
 
-    const result = await registerUser({
-      fullName: fullName.trim(),
-      shopName: shopName.trim(),
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim(),
-      password,
-    })
+    setIsSubmitting(true)
+    try {
+      const result = await registerUser({
+        fullName: fullName.trim(),
+        shopName: shopName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim(),
+        password,
+      })
 
-    if (!result.success) {
-      setError(result.error ?? "Unable to register user.")
-      return
+      if (!result.success) {
+        const errorMessage = result.error ?? "Unable to register user."
+        setError(errorMessage)
+        toast.error(errorMessage)
+        return
+      }
+
+      toast.success("Sign up successful. Please log in with your email and password.")
+      setMode("login")
+      setLoginValues({ email: email.trim(), password: "" })
+      setSignUpValues({
+        fullName: "",
+        shopName: "",
+        email: "",
+        phoneNumber: "",
+        password: "",
+        confirmPassword: "",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setMessage("Sign up successful. Please log in with your email and password.")
-    setMode("login")
-    setLoginValues({ email: email.trim(), password: "" })
-    setSignUpValues({
-      fullName: "",
-      shopName: "",
-      email: "",
-      phoneNumber: "",
-      password: "",
-      confirmPassword: "",
-    })
   }
 
   const handleGoogleSignIn = async () => {
     setError("")
-    setMessage("")
+    setIsSubmitting(true)
 
-    const result = await signInWithGoogle()
-    if (!result.success) {
-      setError(result.error ?? "Google login failed.")
-      return
+    try {
+      const result = await signInWithGoogle()
+      if (!result.success) {
+        const errorMessage = result.error ?? "Google login failed."
+        setError(errorMessage)
+        toast.error(errorMessage)
+        return
+      }
+
+      toast.success("Logged in successfully.")
+      navigate("/dashboard")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    navigate("/dashboard")
   }
 
   return (
@@ -136,16 +163,6 @@ export function LoginForm({
                     Login to your account
                   </p>
                 </div>
-                {error ? (
-                  <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                ) : null}
-                {message ? (
-                  <div className="rounded-3xl border border-emerald-400/20 bg-emerald-50 p-3 text-sm text-emerald-700">
-                    {message}
-                  </div>
-                ) : null}
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
@@ -200,13 +217,22 @@ export function LoginForm({
                   </div>
                 </Field>
                 <Field>
-                  <Button type="submit" className="cursor-pointer">Login</Button>
+                  <Button type="submit" disabled={isSubmitting} className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Logging in...
+                      </span>
+                    ) : (
+                      "Login"
+                    )}
+                  </Button>
                 </Field>
                 <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                   Or continue with
                 </FieldSeparator>
                 <Field className="">
-                  <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="cursor-pointer">
+                  <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isSubmitting} className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-70">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
@@ -223,9 +249,8 @@ export function LoginForm({
                     onClick={() => {
                       setMode("signup")
                       setError("")
-                      setMessage("")
                     }}
-                    className="font-medium text-primary underline-offset-2 hover:underline"
+                    className="font-medium text-primary underline-offset-2 hover:underline cursor-pointer"
                   >
                     Sign up
                   </button>
@@ -241,11 +266,6 @@ export function LoginForm({
                     Register with your business details
                   </p>
                 </div>
-                {error ? (
-                  <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                ) : null}
                 <Field>
                   <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
                   <Input
@@ -367,7 +387,16 @@ export function LoginForm({
                   </div>
                 </Field>
                 <Field>
-                  <Button type="submit">Sign Me Up</Button>
+                  <Button type="submit" disabled={isSubmitting} className="disabled:cursor-not-allowed disabled:opacity-70">
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Signing up...
+                      </span>
+                    ) : (
+                      "Sign Me Up"
+                    )}
+                  </Button>
                 </Field>
                 <FieldDescription className="text-center">
                   Already have an account?{' '}
@@ -376,9 +405,8 @@ export function LoginForm({
                     onClick={() => {
                       setMode("login")
                       setError("")
-                      setMessage("")
                     }}
-                    className="font-medium text-primary underline-offset-2 hover:underline"
+                    className="font-medium text-primary underline-offset-2 hover:underline cursor-pointer"
                   >
                     Login
                   </button>

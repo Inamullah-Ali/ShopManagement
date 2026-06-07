@@ -32,7 +32,6 @@ export default function StockManagement() {
   const allProducts = useProductStore((state) => state.products);
   const loadProductsByShop = useProductStore((state) => state.loadProductsByShop);
 
-  // Load products from Firestore when user changes
   useEffect(() => {
     if (currentUser?.firebaseUid) {
       loadProductsByShop(currentUser.firebaseUid);

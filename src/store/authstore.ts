@@ -1,12 +1,14 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import { auth, db } from "../../lib/firebase"
+import { FirebaseError } from "firebase/app"
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   updateProfile,
+  updatePassword,
 } from "firebase/auth"
 import { doc, setDoc, updateDoc } from "firebase/firestore"
 
@@ -46,6 +48,7 @@ interface AuthStore {
   registerUser: (user: Omit<AuthUser, "id" | "createdAt" | "loginHistory">) => Promise<{ success: boolean; error?: string }>
   loginUser: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>
+  changePassword: (id: string, currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   getUser: (id: string) => AuthUser | undefined
   updateUser: (id: string, update: Partial<Omit<AuthUser, "id" | "createdAt" | "loginHistory">>) => Promise<{ success: boolean; error?: string }>
@@ -61,7 +64,6 @@ export const useAuthStore = create<AuthStore>()(
         let device = "Unknown Device"
         let location = "Unknown Location"
 
-        // Detect browser and OS
         if (/Windows NT 10\.0|Windows NT 11\.0/.test(ua)) {
           if (/Chrome/.test(ua)) device = "Chrome on Windows"
           else if (/Firefox/.test(ua)) device = "Firefox on Windows"
@@ -194,7 +196,28 @@ export const useAuthStore = create<AuthStore>()(
           try {
             userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password)
           } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : "Invalid login credentials."
+            let message = "Check your email or password."
+
+            if (error instanceof FirebaseError && error.code) {
+              switch (error.code) {
+                case "auth/wrong-password":
+                case "auth/user-not-found":
+                case "auth/invalid-credential":
+                  message = "Check your email or password."
+                  break
+                case "auth/invalid-email":
+                  message = "Invalid email address."
+                  break
+                case "auth/too-many-requests":
+                  message = "Too many attempts. Try again later."
+                  break
+                default:
+                  message = error.message || message
+              }
+            } else if (error instanceof Error) {
+              message = error.message
+            }
+
             return { success: false, error: message }
           }
 
@@ -440,6 +463,106 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           return { success: true }
+        },
+
+        changePassword: async (id, currentPassword, newPassword) => {
+          const users = get().users
+          const index = users.findIndex((user) => user.id === id)
+
+          if (index === -1) {
+            return { success: false, error: "User not found." }
+          }
+
+          const user = users[index]
+
+          try {
+            // Re-authenticate by signing in with the current password
+            await signInWithEmailAndPassword(auth, user.email, currentPassword)
+
+            // Update the Firebase Auth password for the currently signed-in user
+            if (auth.currentUser) {
+              await updatePassword(auth.currentUser, newPassword)
+            }
+
+            // Build password change record and update local store
+            const { device, ipAddress, location } = getDeviceInfo()
+            const now = new Date()
+            const date = now.toISOString().split("T")[0]
+            const time = now.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            })
+
+            const passwordChangeRecord: LoginRecord = {
+              id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              date,
+              time,
+              location,
+              device,
+              ipAddress,
+              status: "Success",
+              action: "Password Change",
+            }
+
+            const updatedUser: AuthUser = {
+              ...user,
+              password: newPassword,
+              loginHistory: [passwordChangeRecord, ...user.loginHistory].slice(0, 50),
+            }
+
+            const nextUsers = users.map((u, idx) => (idx === index ? updatedUser : u))
+            set({ users: nextUsers })
+
+            // Update Firestore with any metadata and loginHistory
+            if (updatedUser.firebaseUid) {
+              await updateDoc(doc(db, "users", updatedUser.firebaseUid), {
+                fullName: updatedUser.fullName,
+                shopName: updatedUser.shopName,
+                shopLogo: updatedUser.shopLogo,
+                email: updatedUser.email,
+                phoneNumber: updatedUser.phoneNumber,
+                address: updatedUser.address,
+                businessType: updatedUser.businessType,
+                taxNumber: updatedUser.taxNumber,
+                currency: updatedUser.currency,
+                businessAddress: updatedUser.businessAddress,
+                avatar: updatedUser.shopLogo,
+                loginHistory: updatedUser.loginHistory,
+              })
+            }
+
+            if (get().currentUser?.id === id) {
+              set({ currentUser: updatedUser })
+            }
+
+            return { success: true }
+          } catch (error: unknown) {
+            let message = "Unable to change password."
+
+            if (error instanceof FirebaseError && error.code) {
+              switch (error.code) {
+                case "auth/wrong-password":
+                case "auth/invalid-credential":
+                case "auth/user-mismatch":
+                  message = "Current password is incorrect."
+                  break
+                case "auth/requires-recent-login":
+                  message = "Please sign in again and try changing your password."
+                  break
+                case "auth/weak-password":
+                  message = "New password is too weak. Choose a stronger password."
+                  break
+                default:
+                  message = error instanceof Error ? error.message : message
+              }
+            } else if (error instanceof Error) {
+              message = error.message
+            }
+
+            return { success: false, error: message }
+          }
         },
 
         deleteUser: (id) => {

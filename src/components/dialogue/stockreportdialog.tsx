@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -31,6 +33,8 @@ export default function StockReportDialog({ trigger }: StockReportDialogProps) {
   const history = useProductStore((s) => (s as any).history as any[]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const filteredEntries = useMemo(() => {
     const s = startDate ? new Date(startDate) : null;
@@ -127,8 +131,33 @@ export default function StockReportDialog({ trigger }: StockReportDialogProps) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      // fallback to CSV
       downloadCsv(data);
+      throw e;
+    }
+  };
+
+  const handleDownload = async () => {
+    if (rows.length === 0) {
+      toast.error("No stock report data available to download.");
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      await toast.promise(
+        downloadXlsx(rows),
+        {
+          loading: "Downloading stock report...",
+          success: "Stock report downloaded successfully.",
+          error: "Failed to download stock report.",
+        },
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to download report.";
+      toast.error(message);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -225,10 +254,18 @@ export default function StockReportDialog({ trigger }: StockReportDialogProps) {
             </Button>
           </DialogClose>
           <Button
-            onClick={() => downloadXlsx(rows)}
+            onClick={handleDownload}
+            disabled={isDownloading}
             className="bg-purple-600 hover:bg-purple-700 cursor-pointer text-white"
           >
-            Download
+            {isDownloading ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Downloading...
+              </span>
+            ) : (
+              "Download"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,6 +3,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import personImage from "@/assets/images/person.jpg"
 import { useState } from "react"
 import {
   DropdownMenu,
@@ -59,8 +60,8 @@ export function NavUser({
               size="lg"
               className="cursor-pointer data-[state=open]:bg-[#7C3AED] data-[state=open]:text-white hover:bg-[#6D28D9] hover:text-white focus-visible:bg-[#6D28D9]"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
+              <Avatar className="h-10 w-10 rounded-lg">
+                <AvatarImage src={user.avatar || personImage} alt={user.name} />
                 <AvatarFallback>{getNameInitial(user.name)}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -81,7 +82,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={user.avatar || personImage} alt={user.name} />
                   <AvatarFallback>{getNameInitial(user.name)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -112,11 +113,11 @@ export function NavUser({
                 </div>
                 <ThemeSwitch />
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings") } className="cursor-pointer">
+              {/* <DropdownMenuItem onClick={() => navigate("/settings") } className="cursor-pointer">
                 <SettingsIcon
                 />
                 Settings
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             

@@ -31,7 +31,7 @@ import {
 import type { Expenses } from "@/types/expense";
 import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/store/authstore";
-import { Calendar, Download, Funnel, Plus, Search } from "lucide-react";
+import { Calendar, Download, Funnel, Plus, Search, Loader2 } from "lucide-react";
 import { useExpenseStore } from "@/store/expensestore";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -42,6 +42,7 @@ export default function Expenses() {
   const [statusFilter, setStatusFilter] = useState<string>("all-status");
   const [dateRange, setDateRange] = useState<any | undefined>(undefined);
   const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const expenses = useExpenseStore((state) => state.expenses);
   const loadExpensesByShop = useExpenseStore((state) => state.loadExpensesByShop);
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -139,6 +140,8 @@ export default function Expenses() {
       return;
     }
 
+    setIsExporting(true);
+
     try {
       const pdf = new jsPDF();
       let yPosition = 20;
@@ -234,6 +237,8 @@ export default function Expenses() {
     } catch (error) {
       console.error("Export error:", error);
       toast.error("Failed to export report");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -269,18 +274,33 @@ export default function Expenses() {
                 onClick={handleExportReport}
                 variant="outline"
                 size="icon"
-                className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 hover:text-white"
+                className="cursor-pointer bg-purple-500 text-white hover:bg-purple-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isExporting}
               >
-                <Download size={18} />
+                {isExporting ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Download size={18} />
+                )}
               </Button>
             </div>
             <div className="hidden justify-start lg:justify-end sm:flex">
               <Button
                 onClick={handleExportReport}
                 variant="outline"
-                className="w-full cursor-pointer border border-purple-500 font-bold text-purple-500 hover:bg-gray-100 hover:text-purple-600 sm:w-auto"
+                className="w-full cursor-pointer border border-purple-500 font-bold text-purple-500 hover:bg-gray-100 hover:text-purple-600 sm:w-auto disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isExporting}
               >
-                <Download /> Export Report
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download /> Export Report
+                  </>
+                )}
               </Button>
             </div>
           </div>

@@ -100,15 +100,19 @@ export default function Home() {
   const recentPurchaseItems = useMemo(() => {
     const storedHistory = recentPurchaseHistory
       .flatMap((purchase) =>
-        purchase.items?.map((item) => ({
-          id: `${purchase.id}-${item.id}`,
-          name: item.name,
-          quantity: Number(item.quantity || 0),
-          price: typeof item.purchasePrice === "number" ? item.purchasePrice : 0,
-          image: undefined,
-          suppliername: purchase.suppliername,
-          date: purchase.date,
-        })) || [],
+        purchase.items?.map((item) => {
+          const product = allProducts.find((p) => String(p.id) === String(item.id));
+
+          return {
+            id: `${purchase.id}-${item.id}`,
+            name: item.name,
+            quantity: Number(item.quantity || 0),
+            price: typeof item.purchasePrice === "number" ? item.purchasePrice : 0,
+            image: product?.image ?? undefined,
+            suppliername: purchase.suppliername,
+            date: purchase.date,
+          }
+        }) || [],
       )
       .filter((item) => item.quantity > 0)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

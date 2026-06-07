@@ -10,7 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import type { Customer, CustomerFormValues } from "@/types/customer";
 import { useCustomerStore } from "@/store/customerstore";
-import { PencilLine } from "lucide-react";
+import { Loader2, PencilLine } from "lucide-react";
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -28,6 +29,7 @@ const createDefaultValues = (customer: Customer): CustomerFormValues => ({
 
 export function EditCustomerDialogue({ customer }: EditCustomerDialogueProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const updateCustomer = useCustomerStore((state) => state.updateCustomer);
   const defaultValues = useMemo(() => createDefaultValues(customer), [customer]);
   const {
@@ -53,9 +55,19 @@ export function EditCustomerDialogue({ customer }: EditCustomerDialogueProps) {
     }
   };
 
-  const onSubmit = (data: CustomerFormValues) => {
-    updateCustomer(customer.id, data);
-    setOpen(false);
+  const onSubmit = async (data: CustomerFormValues) => {
+    setIsSubmitting(true);
+
+    try {
+      await updateCustomer(customer.id, data);
+      toast.success("Customer updated successfully.");
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update customer.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -127,12 +139,23 @@ export function EditCustomerDialogue({ customer }: EditCustomerDialogueProps) {
 
           <div className="flex items-center justify-end gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="cursor-pointer" type="button">
+              <Button variant="outline" disabled={isSubmitting} className="cursor-pointer" type="button">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white">
-              Update
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                "Update"
+              )}
             </Button>
           </div>
         </form>

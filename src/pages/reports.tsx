@@ -225,7 +225,7 @@ export default function Reports() {
           <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
           <p className="text-sm text-muted-foreground">View business performance and download a consolidated PDF report.</p>
         </div>
-        <Button onClick={handleExportReport} variant="outline">
+        <Button onClick={handleExportReport} variant="outline" className="cursor-pointer">
           <Download className="mr-2 h-4 w-4" /> Download PDF
         </Button>
       </div>

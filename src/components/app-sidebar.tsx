@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuthStore } from "@/store/authstore"
+import shopImage from "@/assets/images/shop.jpg"
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -112,11 +113,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const shop = currentUser
     ? {
         name: currentUser.shopName || currentUser.fullName,
-        logo: currentUser.shopLogo,
+        logo: currentUser.shopLogo || shopImage,
       }
     : {
         name: data.user.name,
-        logo: undefined,
+        logo: shopImage,
       }
   const user = currentUser
     ? {
@@ -135,10 +136,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              className="data-[slot=sidebar-menu-button]:p-1.5! p-0 hover:bg-transparent hover:text-inherit active:bg-transparent active:text-inherit focus-visible:ring-0"
             >
-              <a href="#" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 rounded-lg">
+              <a href="#" className="flex justify-start items-center">
+                <Avatar className="h-8 w-8 -ml-1.5 rounded-lg group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
                   <AvatarImage src={shop.logo} alt={shop.name} />
                   <AvatarFallback>{getShopInitial(shop.name)}</AvatarFallback>
                 </Avatar>

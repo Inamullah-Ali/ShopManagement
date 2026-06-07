@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilLine } from "lucide-react";
+import { PencilLine, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import type { Expenses } from "@/types/expense";
 import { useExpenseStore } from "@/store/expensestore";
@@ -29,6 +30,7 @@ export function EditExpenseDialogue({ expense }: Props) {
   );
 
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [paidAmount, setPaidAmount] = useState("");
   const [creditPaymentAmount, setCreditPaymentAmount] = useState(0);
 
@@ -39,54 +41,65 @@ export function EditExpenseDialogue({ expense }: Props) {
     }
   }, [open, expense.id, expense.paidamount]);
 
-  const handleUpdate = () => {
-    const total = expense.totalamount;
+  const handleUpdate = async () => {
+    setIsSubmitting(true);
 
-    if (expense.paymentmethod === "Credit") {
-      const paymentAmount = Math.max(Number(creditPaymentAmount) || 0, 0);
-      const remaining = total - expense.paidamount;
+    try {
+      const total = expense.totalamount;
 
-      if (paymentAmount <= 0) {
-        alert("Please enter a credit payment amount.");
+      if (expense.paymentmethod === "Credit") {
+        const paymentAmount = Math.max(Number(creditPaymentAmount) || 0, 0);
+        const remaining = total - expense.paidamount;
+
+        if (paymentAmount <= 0) {
+          throw new Error("Please enter a credit payment amount.");
+        }
+
+        if (paymentAmount > remaining) {
+          throw new Error(`Payment cannot exceed remaining balance of PKR ${remaining.toLocaleString()}.`);
+        }
+
+        recordCreditExpensePayment(
+          expense.id,
+          paymentAmount,
+          new Date().toISOString()
+        );
+
+        toast.success("Payment recorded successfully.");
+        setOpen(false);
         return;
       }
 
-      if (paymentAmount > remaining) {
-        alert(`Payment cannot exceed remaining balance of PKR ${remaining.toLocaleString()}.`);
-        return;
+      const newPayment = Number(paidAmount || 0);
+      const totalPaid = expense.paidamount + newPayment;
+
+      if (newPayment <= 0) {
+        throw new Error("Please enter a payment amount.");
       }
 
-      recordCreditExpensePayment(
-        expense.id,
-        paymentAmount,
-        new Date().toISOString()
+      if (totalPaid > total) {
+        throw new Error(`Total paid amount cannot exceed total expense of PKR ${total.toLocaleString()}. Current: PKR ${expense.paidamount.toLocaleString()}, Max additional: PKR ${(total - expense.paidamount).toLocaleString()}`);
+      }
+
+      const status = totalPaid >= total ? "Complete" : "Pending";
+
+      updateExpense(expense.id, {
+        paidamount: totalPaid,
+        status,
+      });
+
+      toast.success(
+        status === "Complete"
+          ? "Expense payment completed successfully."
+          : "Payment updated successfully."
       );
-
       setOpen(false);
-      return;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update payment";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const newPayment = Number(paidAmount || 0);
-    const totalPaid = expense.paidamount + newPayment;
-
-    if (newPayment <= 0) {
-      alert("Please enter a payment amount.");
-      return;
-    }
-
-    if (totalPaid > total) {
-      alert(`Total paid amount cannot exceed total expense of PKR ${total.toLocaleString()}. Current: PKR ${expense.paidamount.toLocaleString()}, Max additional: PKR ${(total - expense.paidamount).toLocaleString()}`);
-      return;
-    }
-
-    const status = totalPaid >= total ? "Complete" : "Pending";
-
-    updateExpense(expense.id, {
-      paidamount: totalPaid,
-      status,
-    });
-
-    setOpen(false);
   };
 
 const remaining = Math.max(
@@ -124,6 +137,7 @@ const pendingAmount = Math.max(
                   <Input
                     value={expense.totalamount}
                     readOnly
+                    disabled={isSubmitting}
                     className="mt-1"
                   />
                 </div>
@@ -133,6 +147,7 @@ const pendingAmount = Math.max(
                   <Input
                     value={remaining}
                     readOnly
+                    disabled={isSubmitting}
                     className="mt-1"
                   />
                 </div>
@@ -146,6 +161,7 @@ const pendingAmount = Math.max(
                       setCreditPaymentAmount(Number(e.target.value || 0))
                     }
                     placeholder="Enter payment amount"
+                    disabled={isSubmitting}
                     className="mt-1"
                   />
                 </div>
@@ -191,6 +207,7 @@ const pendingAmount = Math.max(
                   placeholder="Enter amount to add"
                   value={paidAmount || ""}
                   onChange={(e) => setPaidAmount(e.target.value)}
+                  disabled={isSubmitting}
                   className="mt-1"
                 />
               </div>
@@ -213,15 +230,23 @@ const pendingAmount = Math.max(
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
             Cancel
           </Button>
 
           <Button
             onClick={handleUpdate}
-            className="bg-purple-500 text-white hover:bg-purple-600"
+            className="bg-purple-500 text-white hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
           >
-            Update
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

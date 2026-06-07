@@ -5,13 +5,13 @@ import { getStorage } from "firebase/storage";
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCYxunutN008n9hJWp-Lm_fvRwciMU_WIE",
-  authDomain: "shopdashboard-f1775.firebaseapp.com",
-  projectId: "shopdashboard-f1775",
-  storageBucket: "shopdashboard-f1775.firebasestorage.app",
-  messagingSenderId: "2559232326",
-  appId: "1:2559232326:web:7f4f77074058b6e93b3d47",
-  measurementId: "G-6JMLJ3JFRX"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 export const app = initializeApp(firebaseConfig)

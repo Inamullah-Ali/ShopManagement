@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,21 @@ import { useAuthStore } from "@/store/authstore";
 export function LogoutDialogue() {
   const logout = useAuthStore((state) => state.logout);
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogout = () => {
+    setIsSubmitting(true)
+    try {
+      logout()
+      toast.success("Logged out successfully.")
+      setOpen(false)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to logout"
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <>
@@ -45,19 +61,25 @@ export function LogoutDialogue() {
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
-              className="mr-2 cursor-pointer"
+              disabled={isSubmitting}
+              className="mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
             >
               Cancel
             </Button>
 
             <Button
-              onClick={() => {
-                logout();
-                setOpen(false);
-              }}
-              className="bg-red-500 text-white hover:bg-red-600 cursor-pointer"
+              onClick={handleLogout}
+              disabled={isSubmitting}
+              className="bg-red-500 text-white hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Logout
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Logging out...
+                </span>
+              ) : (
+                "Logout"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

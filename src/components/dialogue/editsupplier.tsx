@@ -10,7 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSupplierStore } from "@/store/supplierstore";
 import type { Supplier, SupplierFormValues } from "@/types/supplier";
-import { PencilLine } from "lucide-react";
+import { Loader2, PencilLine } from "lucide-react";
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -30,6 +31,7 @@ const buildDefaultValues = (supplier: Supplier): SupplierFormValues => ({
 
 export function EditSupplierDialogue({ supplier }: EditSupplierDialogueProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const updateSupplier = useSupplierStore((state) => state.updateSupplier);
   const defaultValues = useMemo(() => buildDefaultValues(supplier), [supplier]);
   const {
@@ -52,9 +54,19 @@ export function EditSupplierDialogue({ supplier }: EditSupplierDialogueProps) {
     }
   };
 
-  const onSubmit = (data: SupplierFormValues) => {
-    updateSupplier(supplier.id, data);
-    setOpen(false);
+  const onSubmit = async (data: SupplierFormValues) => {
+    setIsSubmitting(true);
+
+    try {
+      await updateSupplier(supplier.id, data);
+      toast.success("Supplier updated successfully.");
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update supplier.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -125,12 +137,23 @@ export function EditSupplierDialogue({ supplier }: EditSupplierDialogueProps) {
 
           <div className="flex items-center justify-end gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="cursor-pointer" type="button">
+              <Button variant="outline" disabled={isSubmitting} className="cursor-pointer" type="button">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white">
-              Update
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-purple-500 hover:bg-purple-600 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                "Update"
+              )}
             </Button>
           </div>
         </form>
