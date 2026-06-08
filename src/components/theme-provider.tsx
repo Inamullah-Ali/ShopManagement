@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 
 type Theme = "dark" | "light" | "system"
 
@@ -26,36 +32,37 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
-  ...props
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
-    if (theme === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-    }
-
-    return theme
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return defaultTheme
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme
   })
 
+  const getSystemTheme = (): "light" | "dark" => {
+    if (typeof window === "undefined") return "light"
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
+  }
+
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+    theme === "system" ? getSystemTheme() : theme
+  )
+
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const root = window.document.documentElement
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
 
     const applyTheme = (nextTheme: Theme) => {
       const effectiveTheme =
-        nextTheme === "system"
-          ? mediaQuery.matches
-            ? "dark"
-            : "light"
-          : nextTheme
+        nextTheme === "system" ? getSystemTheme() : nextTheme
 
       root.classList.remove("light", "dark")
       root.classList.add(effectiveTheme)
       root.style.colorScheme = effectiveTheme
+
       setResolvedTheme(effectiveTheme)
     }
 
@@ -77,15 +84,17 @@ export function ThemeProvider({
       theme,
       resolvedTheme,
       setTheme: (nextTheme: Theme) => {
-        localStorage.setItem(storageKey, nextTheme)
+        if (typeof window !== "undefined") {
+          localStorage.setItem(storageKey, nextTheme)
+        }
         setThemeState(nextTheme)
       },
     }),
-    [resolvedTheme, storageKey, theme]
+    [theme, resolvedTheme, storageKey]
   )
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider value={value}>
       {children}
     </ThemeProviderContext.Provider>
   )
@@ -94,8 +103,9 @@ export function ThemeProvider({
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
 
-  if (context === undefined)
+  if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider")
+  }
 
   return context
 }

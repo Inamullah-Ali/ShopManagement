@@ -16,12 +16,14 @@ import Account from './pages/account'
 import LoginPage from './pages/loginpage'
 import ProtectedRoutes from './components/login/protectedroute'
 import UnprotectedRoutes from './components/login/unprotectedroutes'
+import InstallPopup from './components/InstallPopup'
 
 function App() {
 
   return (
     <>
     <TooltipProvider>
+       <InstallPopup />
     <Routes>      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route element={<UnprotectedRoutes />}>
