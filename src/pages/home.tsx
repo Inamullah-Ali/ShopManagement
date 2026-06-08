@@ -467,7 +467,7 @@ export default function Home() {
 
           {/* Bottom Section */}
           <div className="grid grid-cols-1 gap-3 px-4 sm:px-6 xl:grid-cols-17">
-            <Card className="h-full max-h-88 xl:col-span-9 xl:-mt-24">
+            <Card className="h-full max-h-92 xl:col-span-9 xl:-mt-24">
               <CardHeader>
                 <CardTitle className="font-bold">Recent Sales</CardTitle>
               </CardHeader>
@@ -514,7 +514,7 @@ export default function Home() {
               </CardContent>
             </Card>
             <div className="xl:col-span-4 xl:-mt-24">
-              <Card className="min-h-120">
+              <Card className="min-h-115">
                 <CardHeader>
                   <CardTitle className="font-bold">Recent Purchases</CardTitle>
                 </CardHeader>
@@ -567,7 +567,7 @@ export default function Home() {
               </Card>
             </div>
             <div className="xl:col-span-4 xl:-mt-2">
-              <Card className="h-full min-h-96">
+              <Card className="h-full min-h-90">
                 <CardHeader>
                   <CardTitle className="font-bold">Top Sell</CardTitle>
                 </CardHeader>
@@ -620,9 +620,9 @@ export default function Home() {
               </Card>
             </div>
           </div>
-          <div className="items-center justify-center sm:px-2  max-w-175.5  xl:-mt-35 px-4">
+          <div className="items-center justify-center sm:px-2 w-full md:w-full md:px-6 xl:px-2 xl:max-w-167.5 xl:-mt-27 xl:ml-4 px-4">
             <Card className="w-full p-0">
-                <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                   {quickActions.map((item) => {
                     const Icon = item.icon
 
