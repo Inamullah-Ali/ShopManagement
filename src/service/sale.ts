@@ -20,6 +20,7 @@ export const addSaleService = async (
 ): Promise<{ id: string; sale: SaleRecord }> => {
   try {
     const saleDate = new Date().toISOString()
+    const status = sale.paymentMethod === "Credit" ? "Partial" : "Complete"
     const rawSaleData = {
       shopId,
       customerName: sale.customerName,
@@ -35,6 +36,7 @@ export const addSaleService = async (
       amountPaidNow: sale.amountPaidNow,
       dueDate: sale.dueDate,
       date: saleDate,
+      status: status,
     }
     const saleData = Object.fromEntries(
       Object.entries(rawSaleData).filter(([, value]) => value !== undefined),
@@ -46,7 +48,7 @@ export const addSaleService = async (
       ...sale,
       id: docRef.id,
       date: saleDate,
-      status: sale.paymentMethod === "Credit" ? "Partial" : "Complete",
+      status: status,
       productSummary: sale.items.map((item) => item.name).join(", "),
       quantity: sale.items.reduce((sum, item) => sum + item.quantity, 0),
       subtotal: sale.subtotal,

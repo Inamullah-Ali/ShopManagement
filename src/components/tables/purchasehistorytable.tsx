@@ -32,7 +32,7 @@ export default function PurchaseHistoryTable({ data, onPurchaseUpdate }: History
 
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <Table className="min-w-180">
+          <Table className="w-full">
             <TableHeader className="bg-muted">
               <TableRow>
                 <TableCell>Supplier</TableCell>

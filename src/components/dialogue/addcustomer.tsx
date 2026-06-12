@@ -22,11 +22,16 @@ type AddCustomerDialogueProps = {
   trigger?: ReactNode;
 };
 
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+};
+
 const defaultValues: CustomerFormValues = {
   name: "",
   phoneNumber: "",
   address: "",
-  joinDate: "",
+  joinDate: getTodayDate(),
   status: "Active",
 };
 
@@ -62,7 +67,8 @@ export function AddCustomerDialogue({ trigger }: AddCustomerDialogueProps) {
       toast.success("Customer added successfully.");
       closeAndReset();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to add customer.";
+      const message =
+        error instanceof Error ? error.message : "Failed to add customer.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -100,41 +106,73 @@ export function AddCustomerDialogue({ trigger }: AddCustomerDialogueProps) {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Customer Name</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Customer Name
+              </p>
               <Input
                 placeholder="Enter customer name"
                 {...register("name", { required: "Customer name is required" })}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-            </div>
-
-            <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
-              <Input
-                type="tel"
-                placeholder="Enter phone number"
-                {...register("phoneNumber", { required: "Phone number is required" })}
-              />
-              {errors.phoneNumber && (
-                <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
               )}
             </div>
 
             <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Address (Optional)</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Phone Number
+              </p>
+              <Input
+                type="tel"
+                inputMode="numeric"
+                placeholder="Enter phone number"
+                {...register("phoneNumber", {
+                  required: "Phone number is required",
+                  pattern: {
+                    value: /^[0-9]+$/,
+                    message: "Only numbers are allowed",
+                  },
+                })}
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(
+                    /\D/g,
+                    "",
+                  );
+                }}
+              />
+              {errors.phoneNumber && (
+                <p className="text-sm text-red-500">
+                  {errors.phoneNumber.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                Address (Optional)
+              </p>
               <Input placeholder="Enter address" {...register("address")} />
             </div>
 
             <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Join Date</p>
-              <Input type="date" {...register("joinDate", { required: "Join date is required" })} />
+              <p className="text-sm font-medium text-muted-foreground">
+                Join Date
+              </p>
+              <Input
+                type="date"
+                {...register("joinDate", { required: "Join date is required" })}
+              />
               {errors.joinDate && (
-                <p className="text-sm text-red-500">{errors.joinDate.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.joinDate.message}
+                </p>
               )}
             </div>
 
             <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Status</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Status
+              </p>
               <select
                 className="h-10 rounded-md border bg-background px-3 text-sm"
                 {...register("status")}
@@ -147,7 +185,12 @@ export function AddCustomerDialogue({ trigger }: AddCustomerDialogueProps) {
 
           <div className="flex items-center justify-end gap-2">
             <DialogClose asChild>
-              <Button variant="outline" disabled={isSubmitting} className="cursor-pointer" type="button">
+              <Button
+                variant="outline"
+                disabled={isSubmitting}
+                className="cursor-pointer"
+                type="button"
+              >
                 Cancel
               </Button>
             </DialogClose>

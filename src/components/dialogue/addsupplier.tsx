@@ -22,13 +22,18 @@ type AddSupplierDialogueProps = {
   trigger?: ReactNode;
 };
 
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+};
+
 const defaultValues: SupplierFormValues = {
   name: "",
   contactperson: "",
   phoneNumber: "",
   totalPurchase: "0",
   totalDue: "0",
-  date: "",
+  date: getTodayDate(),
   status: "Active",
 };
 
@@ -114,11 +119,31 @@ export function AddSupplierDialogue({ trigger }: AddSupplierDialogueProps) {
               {errors.contactperson && <p className="text-sm text-red-500">{errors.contactperson.message}</p>}
             </div>
 
-            <div className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
-              <Input type="tel" placeholder="Enter phone number" {...register("phoneNumber", { required: "Phone number is required" })} />
-              {errors.phoneNumber && <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>}
-            </div>
+<div className="grid gap-1">
+  <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
+
+  <Input
+    type="tel"
+    inputMode="numeric"
+    placeholder="Enter phone number"
+    {...register("phoneNumber", {
+      required: "Phone number is required",
+      pattern: {
+        value: /^[0-9]+$/,
+        message: "Only numbers are allowed",
+      },
+    })}
+    onInput={(e) => {
+      e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "");
+    }}
+  />
+
+  {errors.phoneNumber && (
+    <p className="text-sm text-red-500">
+      {errors.phoneNumber.message}
+    </p>
+  )}
+</div>
 
             <div className="grid gap-1">
               <p className="text-sm font-medium text-muted-foreground">Date</p>

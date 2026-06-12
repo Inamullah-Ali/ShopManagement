@@ -350,7 +350,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                     onChange={(event) =>
                       setSignUpValues((prev) => ({
                         ...prev,
-                        phoneNumber: event.target.value,
+                        phoneNumber: event.target.value.replace(/\D/g, ""),
                       }))
                     }
                     placeholder="03451234567"

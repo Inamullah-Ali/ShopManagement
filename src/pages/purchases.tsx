@@ -153,8 +153,6 @@ export default function Purchases() {
     total: 0,
   } satisfies PurchaseProduct);
 
-  // Keep purchaseProducts in sync with products: append newly added products
-  // so that products created on the Products page immediately appear here.
   useEffect(() => {
     setPurchaseProducts((current) => {
       const currentById = new Map(current.map((p) => [p.id, p]));
